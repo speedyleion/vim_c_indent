@@ -9,7 +9,8 @@ set cpo&vim
 
 " May need to see about this name...? but it's meant to be autoloaded so should
 " be ok..?
-function! Format(lnum, count, char)
+"function! C#Format(lnum, count, char)
+function! Cformat()
 
     " The idea:
     "   - standard block comments go to column 60
@@ -23,7 +24,13 @@ function! Format(lnum, count, char)
 
     " For now assume the indentation of the line is the indentation to use for
     " all subsequent lines.
-    let text = getline(a:lnum)
+    let indent = indent(v:lnum)
+    let text = getline(v:lnum)
+    echom "This is the indent"
+    echom indent
+
+    " return other than 0 for Vim to default to Cindent
+    return -1
 
     
 endfunction
