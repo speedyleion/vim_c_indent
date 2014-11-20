@@ -17,17 +17,34 @@ function! Cformat()
     "   - Module and function headers go to column 92
     "   - Normal code goes to column 80
     "   - Finally inline comments normally go to 70 and wrap
-    let l:header_width = 92
-    let l:block_com_width = 60
-    let l:text_width = 80
-    let l:inline_com_width = 72
+    let header_width = 92
+    let block_com_width = 60
+    let text_width = 80
+    let inline_com_width = 72
 
     " For now assume the indentation of the line is the indentation to use for
     " all subsequent lines.
     let indent = indent(v:lnum)
     let text = getline(v:lnum)
-    echom "This is the indent"
-    echom indent
+    let width = strdisplaywidth(text)
+
+    " If this is a string then let us handle the wrapping nicely
+    if has('syntax_items')
+        \ && synIDattr(synID(v:lnum, width, 1), "name") =~ "String$"
+        if width < text_width
+            return -1
+        else
+            " Go back to the first space and append a quote
+            " HACK FOR TESTING JUST CUT STRING AND APPEND QUOTE
+            
+            " Now replace the conents
+            setline(v:lnum, '"food' . '"')
+            "append(v:lnum, {'"' . 'taco"'})
+            "setline(v:lnum, text[:text_width] . '"')
+            "append(v:lnum, '"' . text[text_width:])
+            return 0
+        endif
+    endif
 
     " return other than 0 for Vim to default to Cindent
     return -1
