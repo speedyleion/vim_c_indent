@@ -9,6 +9,10 @@ set cpo&vim
 
 " May need to see about this name...? but it's meant to be autoloaded so should
 " be ok..?
+" This is meant to be used with formatexpr. The help files of vim say that
+" v:count should be the number of lines, but during development it seems like
+" Vim just appends all adjacent lines being formated as one concatenated line
+" with spaces between each line.
 "function! C#Format(lnum, count, char)
 function! Cformat()
 
@@ -17,7 +21,6 @@ function! Cformat()
     "   - Module and function headers go to column 92
     "   - Normal code goes to column 80
     "   - Finally inline comments normally go to 70 and wrap
-    let l:count = v:count
     let block_com_width = 60
     let inline_com_width = 72
     let text_width = 80
@@ -66,32 +69,12 @@ function! Cformat()
 
     " If this is a string then let us handle the wrapping nicely
     if text_type =~ "String$"
-        " This is wierd docs say that v:count should be the number of lines, but
-        " Vim is alwasy giving back one for v:count, but there are '\n' for each
-        " line so probably need to key off of this
-        echom v:count
-        echom text
-        "echo split(text, '\n')
-        echom l:count
-
-        " I'm not sure why vim is doing this but if you do 'gq<down>' on a line
-        " that ends in quotes it appends the next line to it and passes it here
-        " as one line....????
-        " find out if the current character is the end of the string, this is
-        " just a brute force approach so could be somewhat error prone
-        if text[text_width -1 : text_width - 1] == '"'
-            \ && text[text_width - 2 : text_width - 2] != '\'
-            return -1
-        endif
+        " Strip out any concatenated strings, i.e. '" "'. Make sure to exclude
+        " '\" "'.
+        let text = substitute(text, '\([^\\]\)" "', '\1', 'g')
 
         " Go back to the first space
-        let l:i = text_width - 2
-        while l:i > 0
-            if text[l:i] == ' '
-                break
-            endif
-            let l:i = l:i - 1
-        endwhile
+        let l:i = strridx(text, ' ', text_width - 2)
             
         " Make sure we are still in the string
         let l:string = 0
