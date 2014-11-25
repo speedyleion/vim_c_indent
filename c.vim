@@ -14,88 +14,110 @@ set cpo&vim
 " Vim just appends all adjacent lines being formated as one concatenated line
 " with spaces between each line.
 "function! C#Format(lnum, count, char)
-function! Cformat()
+function! Cformat(lnum)
+
+    " For now assume the indentation of the line is the indentation to use for
+    " all subsequent lines.
+    let l:indent = indent(a:lnum)
 
     " The idea:
     "   - standard block comments go to column 60
     "   - Module and function headers go to column 92
     "   - Normal code goes to column 80
     "   - Finally inline comments normally go to 70 and wrap
-    let block_com_width = 60
-    let inline_com_width = 72
-    let text_width = 80
-    let header_width = 92
+    let l:block_com_width = 60 - l:indent
+    let l:inline_com_width = 72 - l:indent
+    let l:text_width = 80 - l:indent
+    let l:header_width = 92 - l:indent
 
-    
-    " For now assume the indentation of the line is the indentation to use for
-    " all subsequent lines.
-    let indent = indent(v:lnum)
-    let text = getline(v:lnum)
-    let width = strdisplaywidth(text)
+    let l:text = getline(a:lnum)
+    let l:width = strdisplaywidth(l:text)
 
     " Save the styles of the line
-    if width < block_com_width || !has('syntax_items')
+    if l:width < l:block_com_width || !has('syntax_items')
         return -1
     endif
 
     let block_com_type = ''
     let inline_com_type = ''
-    let text_type = ''
+    let l:text_type = ''
     let header_type = ''
-    if block_com_width < width
-        let block_com_type = synIDattr(synID(v:lnum, block_com_width, 1),
+    if l:block_com_width < l:width
+        let block_com_type = synIDattr(synID(a:lnum, l:block_com_width, 1),
             \ "name")
     endif
 
-    if inline_com_width < width
-        let inline_com_type = synIDattr(synID(v:lnum, inline_com_width, 1),
+    if l:inline_com_width < l:width
+        let inline_com_type = synIDattr(synID(a:lnum, l:inline_com_width, 1),
             \ "name")
     endif
 
-    if text_width < width
+    if l:text_width < l:width
         " Text can contain special characters like \n or \" so we need to get
         " the stack and see if the text is part of it.
-        for id in synstack(v:lnum, text_width)
+        for l:id in synstack(a:lnum, l:text_width)
             if synIDattr(id, "name") =~"String$"
-                let text_type = synIDattr(id, "name")
+                let l:text_type = synIDattr(l:id, "name")
                 break
             endif
         endfor
     endif
 
-    if header_width < width
-        let header_type = synIDattr(synID(v:lnum, header_width, 1), "name")
+    if l:header_width < l:width
+        let header_type = synIDattr(synID(a:lnum, l:header_width, 1), "name")
     endif
 
     " If this is a string then let us handle the wrapping nicely
-    if text_type =~ "String$"
+    if l:text_type =~ "String$"
         " Strip out any concatenated strings, i.e. '" "'. Make sure to exclude
         " '\" "'.
-        let text = substitute(text, '\([^\\]\)" "', '\1', 'g')
+        let l:text = substitute(l:text, '\([^\\]\)" "', '\1', 'g')
+
+        "Brute force this, by setting the line and getting the style again.
+        call setline(a:lnum, l:text);
+
+        " If stripping the '" "' put the string under text width then just go
+        " back to default logic.
+        if strdisplaywidth(l:text) < l:text_width:
+            return -1
+        endif
 
         " Go back to the first space
-        let l:i = strridx(text, ' ', text_width - 2)
+        let l:i = strridx(l:text, ' ', l:text_width - 2)
+
+        " If there are no spaces in the string just break the string in place
+        echom 'l:i'
+        echom l:i
+        if l:i <= 0
+            let l:i = l:text_width - 2
+        endif
+        echom 'l:i'
+        echom l:i
             
         " Make sure we are still in the string
         let l:string = 0
-        for id in synstack(v:lnum, l:i)
-            if synIDattr(id, "name") =~"String$"
+        for l:id in synstack(a:lnum, l:i)
+            if synIDattr(l:id, "name") =~"String$"
                 let l:string = 1
                 break
             endif
         endfor
+        echom l:i
+        echom l:text_width - 2
+        echom l:string
 
         " If we are still in the string and we aren't already ending at the end
         " of the string signified by a space then a quote
-        if l:i && l:string && text[l:i + 1] != '"'
+        if l:i && l:string && l:text[l:i + 1] != '"'
             " Now replace the conents
-            call setline(v:lnum, text[: l:i] . '"')
-            call append(v:lnum, '"' . text[l:i + 1 :])
+            call setline(a:lnum, l:text[: l:i] . '"')
+            call append(a:lnum, '"' . l:text[l:i + 1 :])
             return 0
         endif
     endif
 
     " return other than 0 for Vim to default to Cindent
+    echom 'returning to default'
     return -1
 
     
