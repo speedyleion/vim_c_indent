@@ -25,12 +25,14 @@ function! Cformat(lnum)
     "   - Module and function headers go to column 92
     "   - Normal code goes to column 80
     "   - Finally inline comments normally go to 70 and wrap
-    let l:block_com_width = 60 - l:indent
-    let l:inline_com_width = 72 - l:indent
-    let l:text_width = 80 - l:indent
-    let l:header_width = 92 - l:indent
+    let l:block_com_width = 60
+    let l:inline_com_width = 72
+    let l:text_width = 80
+    let l:header_width = 92
 
     let l:text = getline(a:lnum)
+    echom l:text
+    echom l:indent
     let l:width = strdisplaywidth(l:text)
 
     " Save the styles of the line
@@ -86,13 +88,9 @@ function! Cformat(lnum)
         let l:i = strridx(l:text, ' ', l:text_width - 2)
 
         " If there are no spaces in the string just break the string in place
-        echom 'l:i'
-        echom l:i
         if l:i <= 0
             let l:i = l:text_width - 2
         endif
-        echom 'l:i'
-        echom l:i
             
         " Make sure we are still in the string
         let l:string = 0
@@ -102,9 +100,6 @@ function! Cformat(lnum)
                 break
             endif
         endfor
-        echom l:i
-        echom l:text_width - 2
-        echom l:string
 
         " If we are still in the string and we aren't already ending at the end
         " of the string signified by a space then a quote
@@ -112,6 +107,15 @@ function! Cformat(lnum)
             " Now replace the conents
             call setline(a:lnum, l:text[: l:i] . '"')
             call append(a:lnum, '"' . l:text[l:i + 1 :])
+            echom cindent(a:lnum + 1 )
+            cursor(a:lnum + 1, $)
+            echom getcurpos()
+            call Cformat(a:lnum + 1)
+            " I wanted to do this but it was too slow... would like to find a
+            " way to pass next line to default formatting.
+            "execute 'normal! gqj'
+
+            " Need to reset the cursor
             return 0
         endif
     endif
