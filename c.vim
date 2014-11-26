@@ -106,10 +106,11 @@ function! Cformat(lnum)
         if l:i && l:string && l:text[l:i + 1] != '"'
             " Now replace the conents
             call setline(a:lnum, l:text[: l:i] . '"')
-            call append(a:lnum, '"' . l:text[l:i + 1 :])
-            echom cindent(a:lnum + 1 )
+
+            " Need to pad up to the indent
+            let l:next_indent = cindent(a:lnum + 1)
+            call append(a:lnum, repeat(' ', l:next_indent) . '"' . l:text[l:i + 1 :])
             cursor(a:lnum + 1, $)
-            echom getcurpos()
             call Cformat(a:lnum + 1)
             " I wanted to do this but it was too slow... would like to find a
             " way to pass next line to default formatting.
