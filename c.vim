@@ -31,8 +31,6 @@ function! Cformat(lnum)
     let l:header_width = 92
 
     let l:text = getline(a:lnum)
-    echom l:text
-    echom l:indent
     let l:width = strdisplaywidth(l:text)
 
     " Save the styles of the line
@@ -110,19 +108,22 @@ function! Cformat(lnum)
             " Need to pad up to the indent
             let l:next_indent = cindent(a:lnum + 1)
             call append(a:lnum, repeat(' ', l:next_indent) . '"' . l:text[l:i + 1 :])
-            cursor(a:lnum + 1, $)
-            call Cformat(a:lnum + 1)
-            " I wanted to do this but it was too slow... would like to find a
-            " way to pass next line to default formatting.
-            "execute 'normal! gqj'
+            " If we are inserting text then update the cursor.
+            if mode() =~# '[iR]' 
+                call cursor(a:lnum + 1, col([a:lnum + 1, "$"]))
+            else
+                " We must be doing paragraph logic so format the next line too
+                call Cformat(a:lnum + 1)
+                " I wanted to do this but it was too slow... would like to find a
+                " way to pass next line to default formatting.
+                "execute 'normal! gqj'
+            endif
 
-            " Need to reset the cursor
             return 0
         endif
     endif
 
     " return other than 0 for Vim to default to Cindent
-    echom 'returning to default'
     return -1
 
     
