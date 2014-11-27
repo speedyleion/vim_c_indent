@@ -1,5 +1,5 @@
 /******************************************************************************************
-*
+*   NOTE: I'm going to do a really long line of text here to see what should
 *
 *
 *
@@ -20,7 +20,8 @@ int main ()
      */
     if( tacos_are_good )
     {
-        printf( "Some string that doesn't start at column 0 what's going to 
+        printf( "Some string that doesn't start at column 0 what's going to "
+                "happen to be awesome 
 
 
 
