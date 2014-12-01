@@ -106,11 +106,10 @@ function s:formater.format_comment()
     " If this is the first line of the block/header comment work on it from that
     " perspective. A block/header comment should always be the only thing on the
     " line and be /***** or /*-------
-    let l:next_indent = cindent(self.lnum + 1)
-    let l:next_line = repeat(' ', l:next_indent)
-    echom l:repeat_char
-    echom self.text
-    if l:repeat_char && self.text =~? '^\/\*' . l:repeat_char . '\+$'
+    let l:indent = cindent(self.lnum)
+    let l:next_line = repeat(' ', l:indent)
+
+    if l:repeat_char != '' && self.text =~? '^\s*\/\*' . l:repeat_char . '\+$'
         let l:indent = cindent(self.lnum)
         let l:text = repeat(' ', l:indent) . '/*' . repeat(l:repeat_char, l:width - 2 - l:indent)
     else
