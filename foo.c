@@ -21,8 +21,10 @@ int main ()
     if( tacos_are_good )
     {
         printf( "Some string that doesn't start at column 0 what's going to "
-                "happen to be awesome 
+                "happen to be awesome");
+    }
 
+    /*----------------------------------------------------
 
 
 

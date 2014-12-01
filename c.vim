@@ -63,7 +63,7 @@ function! s:formater.format(lnum)
         " Text can contain special characters like \n or \" so we need to get
         " the stack and see if the text is part of it.
         for l:id in synstack(self.lnum, self.text_width)
-            if synIDattr(l:id, "name") =~"String$"
+            if synIDattr(l:id, "name") =~# "String$"
                 let l:text_type = synIDattr(l:id, "name")
                 break
             endif
@@ -75,9 +75,9 @@ function! s:formater.format(lnum)
     endif
 
     " If this is a string then let us handle the wrapping nicely
-    if l:text_type =~ "String$"
+    if l:text_type =~# "String$"
         return self.format_string()
-    elseif l:header_type =~ "Comment" || l:inline_com_type =~ "Comment" || l:block_com_type =~ "Comment"
+    elseif l:header_type =~# "Comment" || l:inline_com_type =~# "Comment" || l:block_com_type =~# "Comment"
         return self.format_comment()
     endif
 
@@ -92,37 +92,54 @@ function s:formater.format_comment()
 
     if l:type ==# 'block'
         let l:width = self.block_com_width
+        let l:repeat_char = '-'
     elseif l:type ==# 'inline'
         let l:width = self.inline_com_width
     elseif l:type ==# 'header'
         let l:width = self.header_width
+        let l:repeat_char = '*'
     else
         " Really shouldn't get here
         return -1
     endif
 
-    " Find the first space from the width and break there.
-    let l:i = strridx(self.text, ' ', l:width)
-
-    " Need a better fix, but for now just punt
-    if l:i < 0
-        return -1
+    " If this is the first line of the block/header comment work on it from that
+    " perspective. A block/header comment should always be the only thing on the
+    " line and be /***** or /*-------
+    let l:next_indent = cindent(self.lnum + 1)
+    let l:next_line = repeat(' ', l:next_indent)
+    echom l:repeat_char
+    echom self.text
+    if l:repeat_char && self.text =~? '^\/\*' . l:repeat_char . '\+$'
+        let l:indent = cindent(self.lnum)
+        let l:text = repeat(' ', l:indent) . '/*' . repeat(l:repeat_char, l:width - 2 - l:indent)
+    else
+        " Find the first space from the width and break there.
+        " HACK should be looking to see if the next char is already a space.
+        let l:i = strridx(self.text, ' ', l:width)
+        
+        " Need a better fix, but for now just punt
+        if l:i < 0
+            return -1
+        endif
+        let l:text = self.text[: l:i - 1]
+        let l:next_line .= self.text[l:i + 1 :]
     endif
 
     " Add back the first line of the comment
-    call setline(self.lnum, self.text[: l:i - 1])
+    call setline(self.lnum, l:text)
     
-    " Need to pad up to the indent
-    let l:next_indent = cindent(self.lnum + 1)
-    call append(self.lnum, repeat(' ', l:next_indent) . self.text[l:i + 1 :])
+    " Add the rest of the line
+    call append(self.lnum, l:next_line)
+    
     " If we are inserting text then update the cursor.
     if mode() =~# '[iR]' 
         call cursor(self.lnum + 1, col([self.lnum + 1, "$"]))
     else
         " We must be doing paragraph logic so format the next line too
         call self.fomat(self.lnum + 1)
-        " I wanted to do this but it was too slow... would like to find a
-        " way to pass next line to default formatting.
+        " I wanted to do gq on next line this but it was too slow... would like
+        " to find a way to pass next line to default formatting.
     endif
     return 0
 endfunction
@@ -134,8 +151,8 @@ function s:formater.get_comment_type()
     " In case of odities this will return back the empty string if it can't
     " determine what to do.
 
-    " HACK for now, just return 'header'
-    return 'header'
+    " HACK for now, just return 'block'
+    return 'block'
 endfunction
 
 function s:formater.format_string()
@@ -163,7 +180,7 @@ function s:formater.format_string()
     " Make sure we are still in the string
     let l:string = 0
     for l:id in synstack(self.lnum, l:i)
-        if synIDattr(l:id, "name") =~"String$"
+        if synIDattr(l:id, "name") =~# "String$"
             let l:string = 1
             break
         endif
