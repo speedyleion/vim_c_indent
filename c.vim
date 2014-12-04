@@ -106,7 +106,9 @@ function s:formater.format_comment()
     " If this is the first line of the block/header comment work on it from that
     " perspective. A block/header comment should always be the only thing on the
     " line and be /***** or /*-------
-    let l:indent = cindent(self.lnum)
+    " Originally this was cindent but vim wants to do /*...\n * New stuff so use
+    " indent instead
+    let l:indent = indent(self.lnum)
     let l:next_line = repeat(' ', l:indent)
 
     if l:repeat_char != '' && self.text =~? '^\s*\/\*' . l:repeat_char . '\+$'
