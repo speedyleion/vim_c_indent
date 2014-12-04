@@ -24,10 +24,9 @@ int main ()
                 "happen to be awesome");
     }
 
-    /*------------------------------------------------------
-    This is the end beautiful friend the end. I ate half a
-    million chalupas and I got fat
-    ---------------------------------------------------- -*/
+    /*---------------------------------------------------------
+    This is the end beautiful friend the end. I ate half a million chalupas and I got fat
+    -----------------------------------------------------------------------*/
 
 
 

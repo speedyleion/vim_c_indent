@@ -103,6 +103,8 @@ function s:formater.format_comment()
         return -1
     endif
 
+    echom self.text
+
     " If this is the first line of the block/header comment work on it from that
     " perspective. A block/header comment should always be the only thing on the
     " line and be /***** or /*-------
@@ -110,6 +112,8 @@ function s:formater.format_comment()
     " indent instead
     let l:indent = indent(self.lnum)
     let l:next_line = repeat(' ', l:indent)
+    echom v:count
+
 
     if l:repeat_char != '' && self.text =~? '^\s*\/\*' . l:repeat_char . '\+$'
         let l:indent = cindent(self.lnum)
@@ -138,7 +142,7 @@ function s:formater.format_comment()
         call cursor(self.lnum + 1, col([self.lnum + 1, "$"]))
     else
         " We must be doing paragraph logic so format the next line too
-        call self.fomat(self.lnum + 1)
+        call self.format(self.lnum + 1)
         " I wanted to do gq on next line this but it was too slow... would like
         " to find a way to pass next line to default formatting.
     endif
@@ -201,7 +205,7 @@ function s:formater.format_string()
             call cursor(self.lnum + 1, col([self.lnum + 1, "$"]))
         else
             " We must be doing paragraph logic so format the next line too
-            call self.fomat(self.lnum + 1)
+            call self.format(self.lnum + 1)
             " I wanted to do this but it was too slow... would like to find a
             " way to pass next line to default formatting.
             "execute 'normal! gqj'
