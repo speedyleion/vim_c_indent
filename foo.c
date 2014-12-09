@@ -16,12 +16,11 @@ printf( "this is my very long string i should get all the way up to my text \" "
 int main ()
 {
     int                 foo;        /* This is a variable*/
-                                     /*whcihi did not*/
-                                      /*understand why is*/
-                                       /*this getting*/
-                                        /*indented each time*/
-                                         /*i must have an off*/
-                                          /*by one
+                                    /*which I don't fully*/
+                                    /*understand but i'm*/
+                                    /*going to get the*/
+                                    /*wrapping correctly some*/
+                                    /*how
     /*
      * This is some stuff here *
      */

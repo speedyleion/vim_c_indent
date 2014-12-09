@@ -138,8 +138,7 @@ function s:formater.format_inline_comment(startline)
     let l:stopline = max([0, self.lnum - s:maxoff])
     let [l:startline, l:startcol] = searchpos('\/\*', 'bcnW', stopline)
 
-    let l:indent = l:startcol
-    let l:next_line = repeat(' ', l:startcol)
+    let l:next_line = repeat(' ', l:startcol - 1)
 
     " Find the first space from the width and break there.
     " HACK should be looking to see if the next char is already a end of comment.
