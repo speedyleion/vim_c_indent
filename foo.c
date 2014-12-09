@@ -1,5 +1,5 @@
 /******************************************************************************************
-*   NOTE: I'm going to do a really long line of text here to see what should
+*   NOTE: I'm going to do a really long line of text here to see what should happen if i exceed the 902 chars
 *
 *
 *

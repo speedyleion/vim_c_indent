@@ -19,6 +19,7 @@ let s:formater.block_com_width = 60
 let s:formater.inline_com_width = 72
 let s:formater.text_width = 80
 let s:formater.header_width = 92
+let s:maxoff = 50
 
 " May need to see about this name...? but it's meant to be autoloaded so should
 " be ok..?
@@ -103,8 +104,8 @@ function s:formater.format_comment()
         return -1
     endif
 
-    echom self.text
-
+    echom l:type
+    return
     " If this is the first line of the block/header comment work on it from that
     " perspective. A block/header comment should always be the only thing on the
     " line and be /***** or /*-------
@@ -134,11 +135,10 @@ function s:formater.format_comment()
     " Add back the first line of the comment
     call setline(self.lnum, l:text)
     
-    " Add the rest of the line
-    call append(self.lnum, l:next_line)
-    
     " If we are inserting text then update the cursor.
     if mode() =~# '[iR]' 
+        " Add the rest of the line
+        call append(self.lnum, l:next_line)
         call cursor(self.lnum + 1, col([self.lnum + 1, "$"]))
     else
         " We must be doing paragraph logic so format the next line too
@@ -156,8 +156,26 @@ function s:formater.get_comment_type()
     " In case of odities this will return back the empty string if it can't
     " determine what to do.
 
-    " HACK for now, just return 'block'
-    return 'block'
+    " Search backward for the opening /*
+    let l:stopline = max([0, self.lnum - s:maxoff])
+    echom stopline
+    let l:startline = search('\/\*', 'bcnW', stopline)
+
+    if !l:startline
+        return ''
+    endif
+
+    echom l:startline
+    let l:text = getline(l:startline)
+
+    if l:text =~? '^\/\*\*\+$'
+        return 'header'
+    elseif l:text =~? '^\s*\/\*-\+$'
+        return 'block'
+    else
+        return 'inline'
+    endif
+
 endfunction
 
 function s:formater.format_string()
