@@ -135,7 +135,6 @@ function s:formater.format_inline_comment(startline)
     " For inline comments find the indentation of the previous line above, if it
     " is the first line find the start of the comment
 
-    echom "working on inline comment"
     let l:stopline = max([0, self.lnum - s:maxoff])
     let [l:startline, l:startcol] = searchpos('\/\*', 'bcnW', stopline)
 
@@ -151,7 +150,7 @@ function s:formater.format_inline_comment(startline)
         return -1
     endif
     let l:text = self.text[: l:i - 1] . '*/'
-    let l:next_line .= self.text[l:i + 1 :]
+    let l:next_line .= '/*' . self.text[l:i + 1 :]
     endif
 
     " Add back the first line of the comment
@@ -244,11 +243,11 @@ function s:formater.get_comment_type()
     let l:text = getline(l:startline)
 
     if l:text =~? '^\/\*\*\+$'
-        return 'header', l:startline
+        return ['header', l:startline]
     elseif l:text =~? '^\s*\/\*-\+$'
-        return 'block', l:startline
+        return ['block', l:startline]
     else
-        return 'inline', l:startline 
+        return ['inline', l:startline]
     endif
 
 endfunction

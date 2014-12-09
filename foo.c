@@ -1,5 +1,5 @@
 /******************************************************************************************
-*   NOTE: I'm going to do a really long line of text here to see what should happen if i exceed the 902 chars
+*   NOTE: I'm going to do a really long line of text here to see what should happen if i wrap this text
 *
 *
 *
@@ -15,7 +15,13 @@ printf( "this is my very long string i should get all the way up to my text \" "
 
 int main ()
 {
-    int                 foo;        /* This is a variable whcih
+    int                 foo;        /* This is a variable*/
+                                     /*whcihi did not*/
+                                      /*understand why is*/
+                                       /*this getting*/
+                                        /*indented each time*/
+                                         /*i must have an off*/
+                                          /*by one
     /*
      * This is some stuff here *
      */
