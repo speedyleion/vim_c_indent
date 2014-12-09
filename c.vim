@@ -16,7 +16,7 @@ let s:formater = {}
 "   - Normal code goes to column 80
 "   - Finally inline comments normally go to 70 and wrap
 let s:formater.block_com_width = 60
-let s:formater.inline_com_width = 72
+let s:formater.inline_com_width = 70
 let s:formater.text_width = 80
 let s:formater.header_width = 92
 let s:maxoff = 50
@@ -88,41 +88,22 @@ function! s:formater.format(lnum)
     
 endfunction
 
-function s:formater.format_comment()
-    let l:type = self.get_comment_type()
+function s:formater.format_block_comment(startline)
+    " For block comments use the indent of the start of the comment to indent
+    " the rest of the comment For now if the in insert or replace mode, don't
+    " know how to stop the extra '-' from being entered if the user is manually
+    " typing the terminator lines.
 
-    if l:type ==# 'block'
-        let l:width = self.block_com_width
-        let l:repeat_char = '-'
-    elseif l:type ==# 'inline'
-        let l:width = self.inline_com_width
-    elseif l:type ==# 'header'
-        let l:width = self.header_width
-        let l:repeat_char = '*'
-    else
-        " Really shouldn't get here
-        return -1
-    endif
-
-    echom l:type
-    return
-    " If this is the first line of the block/header comment work on it from that
-    " perspective. A block/header comment should always be the only thing on the
-    " line and be /***** or /*-------
-    " Originally this was cindent but vim wants to do /*...\n * New stuff so use
-    " indent instead
-    let l:indent = indent(self.lnum)
+    let l:indent = indent(a:startline)
     let l:next_line = repeat(' ', l:indent)
-    echom v:count
 
-
-    if l:repeat_char != '' && self.text =~? '^\s*\/\*' . l:repeat_char . '\+$'
+    if self.lnum == startline
         let l:indent = cindent(self.lnum)
-        let l:text = repeat(' ', l:indent) . '/*' . repeat(l:repeat_char, l:width - 2 - l:indent)
+        let l:text = repeat(' ', l:indent) . '/*' . repeat('-', self.block_com_width - 2 - l:indent)
     else
         " Find the first space from the width and break there.
         " HACK should be looking to see if the next char is already a space.
-        let l:i = strridx(self.text, ' ', l:width)
+        let l:i = strridx(self.text, ' ', l:block_com_width)
         
         " Need a better fix, but for now just punt
         if l:i < 0
@@ -149,6 +130,102 @@ function s:formater.format_comment()
     return 0
 endfunction
 
+
+function s:formater.format_inline_comment(startline)
+    " For inline comments find the indentation of the previous line above, if it
+    " is the first line find the start of the comment
+
+    echom "working on inline comment"
+    let l:stopline = max([0, self.lnum - s:maxoff])
+    let [l:startline, l:startcol] = searchpos('\/\*', 'bcnW', stopline)
+
+    let l:indent = l:startcol
+    let l:next_line = repeat(' ', l:startcol)
+
+    " Find the first space from the width and break there.
+    " HACK should be looking to see if the next char is already a end of comment.
+    let l:i = strridx(self.text, ' ', self.inline_com_width - 2 )
+    
+    " Need a better fix, but for now just punt
+    if l:i < 0
+        return -1
+    endif
+    let l:text = self.text[: l:i - 1] . '*/'
+    let l:next_line .= self.text[l:i + 1 :]
+    endif
+
+    " Add back the first line of the comment
+    call setline(self.lnum, l:text)
+    
+    " If we are inserting text then update the cursor.
+    if mode() =~# '[iR]' 
+        " Add the rest of the line
+        call append(self.lnum, l:next_line)
+        call cursor(self.lnum + 1, col([self.lnum + 1, "$"]))
+    else
+        " We must be doing paragraph logic so format the next line too
+        call self.format(self.lnum + 1)
+        " I wanted to do gq on next line this but it was too slow... would like
+        " to find a way to pass next line to default formatting.
+    endif
+    return 0
+endfunction
+
+
+function s:formater.format_header_comment(startline)
+    " Header comments should always start on column 0 with a '*'
+
+    let l:indent = 0
+    let l:next_line = '*' repeat(' ', shiftwidth() - 1)
+
+    if self.lnum == a:startline
+        let l:text = '/*' . repeat('-', self.header_width - 2)
+    else
+        " Find the first space from the width and break there.
+        " HACK should be looking to see if the next char is already a space.
+        let l:i = strridx(self.text, ' ', self.header_width)
+        
+        " Need a better fix, but for now just punt
+        if l:i < 0
+            return -1
+        endif
+        let l:text = self.text[: l:i - 1]
+        let l:next_line .= self.text[l:i + 1 :]
+    endif
+
+    " Add back the first line of the comment
+    call setline(self.lnum, l:text)
+    
+    " If we are inserting text then update the cursor.
+    if mode() =~# '[iR]' 
+        " Add the rest of the line
+        call append(self.lnum, l:next_line)
+        call cursor(self.lnum + 1, col([self.lnum + 1, "$"]))
+    else
+        " We must be doing paragraph logic so format the next line too
+        call self.format(self.lnum + 1)
+        " I wanted to do gq on next line this but it was too slow... would like
+        " to find a way to pass next line to default formatting.
+    endif
+    return 0
+endfunction
+
+function s:formater.format_comment()
+    let [l:type, l:startline] = self.get_comment_type()
+
+    if l:type ==# 'block'
+        return self.format_block_comment(l:startline)
+    elseif l:type ==# 'inline'
+        return self.format_inline_comment(l:startline)
+    elseif l:type ==# 'header'
+        return self.format_header_comment(l:startline)
+    else
+        " Really shouldn't get here
+        return -1
+    endif
+
+endfunction
+
 function s:formater.get_comment_type()
     " This function will return back a string, either 'block' for a block
     " comment, 'inline' for an inline comment, or 'header' for a function or
@@ -158,22 +235,20 @@ function s:formater.get_comment_type()
 
     " Search backward for the opening /*
     let l:stopline = max([0, self.lnum - s:maxoff])
-    echom stopline
     let l:startline = search('\/\*', 'bcnW', stopline)
 
     if !l:startline
         return ''
     endif
 
-    echom l:startline
     let l:text = getline(l:startline)
 
     if l:text =~? '^\/\*\*\+$'
-        return 'header'
+        return 'header', l:startline
     elseif l:text =~? '^\s*\/\*-\+$'
-        return 'block'
+        return 'block', l:startline
     else
-        return 'inline'
+        return 'inline', l:startline 
     endif
 
 endfunction

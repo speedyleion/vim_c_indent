@@ -15,10 +15,11 @@ printf( "this is my very long string i should get all the way up to my text \" "
 
 int main ()
 {
+    int                 foo;        /* This is a variable whcih
     /*
      * This is some stuff here *
      */
-    if( tacos_are_good )
+    if( tacos_are_good )          /* a very big block comment to work with*/
     {
         printf( "Some string that doesn't start at column 0 what's going to "
                 "happen to be awesome");
